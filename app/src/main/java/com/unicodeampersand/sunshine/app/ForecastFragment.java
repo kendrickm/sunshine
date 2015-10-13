@@ -1,5 +1,6 @@
 package com.unicodeampersand.sunshine.app;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v4.app.Fragment;
@@ -75,10 +76,14 @@ public class ForecastFragment extends Fragment {
                 Context context = getContext();
                 CharSequence text = forecastAdapter.getItem(position);
 
-                int duration = Toast.LENGTH_SHORT;
+//                int duration = Toast.LENGTH_SHORT;
+//                Toast toast = Toast.makeText(context, text, duration);
+//                toast.show();
 
-                Toast toast = Toast.makeText(context, text, duration);
-                toast.show();
+                Intent detailIntent = new Intent(getActivity(), DetailActivity.class);
+                detailIntent.putExtra(Intent.EXTRA_TEXT, text);
+                startActivity(detailIntent);
+
 
             }
         });
@@ -101,7 +106,7 @@ public class ForecastFragment extends Fragment {
         int id = item.getItemId();
         if (id == R.id.action_refresh) {
             FetchWeatherTask task = new FetchWeatherTask();
-            task.execute("94043");
+            task.execute("97217");
             return true;
         }
 
@@ -143,12 +148,15 @@ public class ForecastFragment extends Fragment {
                     final String FORMAT_PARAM = "mode";
                     final String UNITS_PARAM = "units";
                     final String DAYS_PARAM = "cnt";
+                    final String API_KEY    = "5d710d9d2090cbd77013d9864d7a7ac5";
+                    final String API_PARAM  = "APPID";
 
                     Uri builtUri = Uri.parse(FORECAST_BASE_URL).buildUpon()
                             .appendQueryParameter(QUERY_PARAM, params[0])
                             .appendQueryParameter(FORMAT_PARAM, format)
                             .appendQueryParameter(UNITS_PARAM, units)
                             .appendQueryParameter(DAYS_PARAM, Integer.toString(numDays))
+                            .appendQueryParameter(API_PARAM, API_KEY)
                             .build();
 
                     URL url = new URL(builtUri.toString());
