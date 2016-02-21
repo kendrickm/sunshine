@@ -1,10 +1,12 @@
 package com.unicodeampersand.sunshine.app;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
@@ -28,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 
@@ -40,6 +43,8 @@ import java.util.Date;
  */
 public class ForecastFragment extends Fragment {
 
+    public final String LOG_TAG = ForecastFragment.class.getSimpleName();
+    String zipCode, units;
     ArrayAdapter<String> forecastAdapter;
     public ForecastFragment() {
     }
@@ -50,16 +55,7 @@ public class ForecastFragment extends Fragment {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
 
-
-
         ArrayList forecastList = new ArrayList<String>();
-        forecastList.add("Today - Sunny 81/52");
-        forecastList.add("Tomorrow - Sunny 84/55");
-        forecastList.add("Wednesday - Sunny 87/59");
-        forecastList.add("Thursday - Sunny 85/60");
-        forecastList.add("Friday - Mostly Cloudy 74/61");
-        forecastList.add("Saturday - Chance of Rain 73/60");
-        forecastList.add("Sunday - Chance of Rain 73/58");
 
         forecastAdapter =
                 new ArrayAdapter<String>(getActivity(),
@@ -76,10 +72,6 @@ public class ForecastFragment extends Fragment {
                 Context context = getContext();
                 CharSequence text = forecastAdapter.getItem(position);
 
-//                int duration = Toast.LENGTH_SHORT;
-//                Toast toast = Toast.makeText(context, text, duration);
-//                toast.show();
-
                 Intent detailIntent = new Intent(getActivity(), DetailActivity.class);
                 detailIntent.putExtra(Intent.EXTRA_TEXT, text);
                 startActivity(detailIntent);
@@ -88,6 +80,24 @@ public class ForecastFragment extends Fragment {
             }
         });
         return rootView;
+    }
+
+    private void updateWeather() {
+        FetchWeatherTask weatherTask = new FetchWeatherTask();
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        zipCode = sharedPref.getString(getString(R.string.pref_location_key), getString(R.string.pref_location_default));
+        units   = sharedPref.getString(getString(R.string.pref_units_key), getString(R.string.pref_units_default));
+        Log.d(LOG_TAG, "The zipCode pulled from preferences is: " + zipCode);
+        Log.d(LOG_TAG, "The units setting pulled from preferences is: " + units);
+        weatherTask.execute(zipCode, units);
+    }
+
+
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        updateWeather();
     }
 
     @Override
@@ -105,13 +115,14 @@ public class ForecastFragment extends Fragment {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.action_refresh) {
-            FetchWeatherTask task = new FetchWeatherTask();
-            task.execute("97217");
+            updateWeather();
             return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
+
+
 
     public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
 
@@ -136,7 +147,8 @@ public class ForecastFragment extends Fragment {
                 // Will contain the raw JSON response as a string.
                 String forecastJsonStr = null;
                 String format = "json";
-                String units = "metric";
+//                String units = "metric";
+                String units  = params[1];
                 int numDays = 7;
 
                 try {
@@ -144,7 +156,7 @@ public class ForecastFragment extends Fragment {
                     // Possible parameters are avaiable at OWM's forecast API page, at
                     // http://openweathermap.org/API#forecast
                     final String FORECAST_BASE_URL = "http://api.openweathermap.org/data/2.5/forecast/daily?";
-                    final String QUERY_PARAM = "q";
+                    final String QUERY_PARAM = "zip";
                     final String FORMAT_PARAM = "mode";
                     final String UNITS_PARAM = "units";
                     final String DAYS_PARAM = "cnt";
